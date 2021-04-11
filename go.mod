@@ -1,3 +1,3 @@
-module github.com/andreswebs/file-renamer
+module github.com/andreswebs/kebab-case
 
 go 1.16
