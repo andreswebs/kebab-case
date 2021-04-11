@@ -1,4 +1,4 @@
-# file-renamer
+# kebab-case
 
 Quick and dirty Go script to rename files recursively to kebab-case.
 
