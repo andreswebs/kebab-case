@@ -9,15 +9,17 @@ import (
 	"strings"
 )
 
+var startDir = "."
+
 func main() {
 
 	if len(os.Args) < 2 {
 		os.Exit(0)
 	}
 
-	searchDir := os.Args[1]
+	startDir = os.Args[1]
 
-	processAll(searchDir)
+	processAll(startDir)
 
 }
 
@@ -30,24 +32,20 @@ func processAll(searchDir string) {
 
 func processFiles(path string, f fs.DirEntry, err error) error {
 
-  if path == "." || f.IsDir() {
-    return err
-  }
-
-	newPath := getNewPath(path)
-	if newPath != path {
-		rename(path, newPath)
+	if path == filepath.Clean(startDir) || f.IsDir() {
+		return err
 	}
-
-	return err
+  
+	return rename(path)
 
 }
 
-func rename(prevName, newName string) {
-	err := os.Rename(prevName, newName)
-	if err != nil {
-		log.Println(err)
-	}
+func rename(prevName string) error {
+  newName := getNewPath(prevName)
+  if newName != prevName {
+    return os.Rename(prevName, newName)
+  }
+  return nil
 }
 
 func getNewPath(path string) string {
