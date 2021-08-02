@@ -1,6 +1,6 @@
 # kebab-case
 
-Quick and dirty Go script to rename files recursively to kebab-case.
+Quick and dirty Go script to rename files recursively to [kebab-case](https://en.wiktionary.org/wiki/kebab_case).
 
 ## Authors
 
