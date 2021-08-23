@@ -1,51 +1,97 @@
 package main
 
 import (
-	"io/fs"
-	"log"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-var startDir = "."
-
-func main() {
+// run executes all tasks and returns an OS exit code and error
+func run() (code int, err error) {
 
 	if len(os.Args) < 2 {
-		os.Exit(0)
+		return 1, errors.New("requires an argument")
 	}
 
-	startDir = os.Args[1]
-
-	processAll(startDir)
-
-}
-
-func processAll(searchDir string) {
-	err := filepath.WalkDir(searchDir, processFiles)
+	start := os.Args[1]
+	
+	err = processFile(start)
 	if err != nil {
-		log.Println(err)
+		return 1, err
 	}
-}
 
-func processFiles(path string, f fs.DirEntry, err error) error {
-
-	if path == filepath.Clean(startDir) || f.IsDir() {
-		return err
-	}
-  
-	return rename(path)
+	return
 
 }
 
-func rename(prevName string) error {
-  newName := getNewPath(prevName)
-  if newName != prevName {
-    return os.Rename(prevName, newName)
-  }
-  return nil
+func main() {
+	code, err := run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	}
+	os.Exit(code)
+}
+
+func processFile(name string) (err error) {
+
+	fullpath, err := filepath.Abs(name)
+	if err != nil {
+		return
+	}
+
+	newName, err := rename(fullpath)
+	if err != nil {
+		return
+	}
+
+	dir, err := isDir(newName)
+	if err != nil {
+		return
+	}
+
+	if !dir {
+		return
+	}
+
+	filenames, dirnames, err := sift(newName)
+	if err != nil {
+		return
+	}
+
+	for _, n := range filenames {
+		_, err = rename(n)
+		if err != nil {
+			return err
+		}
+	}
+
+	var newDirnames []string
+
+	for _, d := range dirnames {
+		newD, err := rename(d)
+		if err != nil {
+			return err
+		}
+		newDirnames = append(newDirnames, newD)
+	}
+
+	for _, d := range newDirnames {
+		processFile(d)
+	}
+
+	return nil
+
+}
+
+func rename(prevName string) (newName string, err error) {
+	newName = getNewPath(prevName)
+	if newName != prevName {
+		return newName, os.Rename(prevName, newName)
+	}
+	return
 }
 
 func getNewPath(path string) string {
@@ -110,5 +156,42 @@ func format(s string) string {
 	s = strings.ToLower(s)
 
 	return s
+
+}
+
+// isDir determines if a file represented
+// by `path` is a directory or not
+func isDir(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), err
+}
+
+// sift inspects a directory and returns a list of filenames, a list of dirnames and an error
+func sift(dir string) (filenames, dirnames []string, err error) {
+
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+
+	for _, file := range files {
+
+		name, err := filepath.Abs(file.Name())
+		if err != nil {
+			return filenames, dirnames, err
+		}
+
+		if file.IsDir() {
+			dirnames = append(dirnames, name)
+		} else {
+			filenames = append(filenames, name)
+		}
+
+	}
+
+	return
 
 }
