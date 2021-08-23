@@ -28,7 +28,7 @@ func TestFormat(t *testing.T) {
 	for _, i := range cases {
 		in := i[0]
 		out := i[1]
-		result := format(in)
+		result := Format(in)
 		if result != out {
 			t.Errorf("'%s' ('%s' != '%s')", in, result, out)
 		}
