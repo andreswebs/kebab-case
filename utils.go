@@ -56,7 +56,10 @@ func ProcessFile(name string) (err error) {
 	}
 
 	for _, d := range newDirnames {
-		ProcessFile(d)
+		err = ProcessFile(d)
+		if err != nil {
+			return
+		}
 	}
 
 	return
