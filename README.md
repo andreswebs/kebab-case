@@ -8,4 +8,4 @@ Quick and dirty Go script to rename files recursively and concurrently to [kebab
 
 ## License
 
-This project is licensed under the [Unlicense](UNLICENSE.md).
+This project is licensed under the [Unlicense](UNLICENSE).
