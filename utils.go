@@ -58,8 +58,6 @@ func ProcessFile(name string, wg *sync.WaitGroup, errCh chan<- error) {
 			ProcessFile(d, wg, errCh)
 		}(d)
 	}
-
-	return
 }
 
 // rename moves a file to new name if new name is different from previous name
