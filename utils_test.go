@@ -45,8 +45,14 @@ func TestProcessFile_DirectoryWithFiles(t *testing.T) {
 	}
 	filePath1 := filepath.Join(dirPath, "FileOne.txt")
 	filePath2 := filepath.Join(dirPath, "FileTwo.txt")
-	os.WriteFile(filePath1, []byte("content one"), 0644)
-	os.WriteFile(filePath2, []byte("content two"), 0644)
+	err = os.WriteFile(filePath1, []byte("content one"), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+	err = os.WriteFile(filePath2, []byte("content two"), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
 
 	var wg sync.WaitGroup
 	errCh := make(chan error, 10)
