@@ -32,9 +32,7 @@ func run() (code int) {
 		close(errCh)
 	}()
 
-	if len(errCh) > 0 {
-		code = 1
-	}
+	// Removed len(errCh) check as it is unreliable. Errors will be processed during iteration.
 
 	for err := range errCh {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
