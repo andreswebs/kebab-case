@@ -21,21 +21,17 @@ func run() (code int) {
 	errCh := make(chan error, 1)
 
 	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
 		ProcessFile(root, &wg, errCh)
 	}()
-
-	go func() {
-		wg.Wait()
-		close(errCh)
-	}()
-
-	// Removed len(errCh) check as it is unreliable. Errors will be processed during iteration.
-
+	
+	wg.Wait()
+	close(errCh)
+	
 	for err := range errCh {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
+		code = 2
 	}
 
 	return
