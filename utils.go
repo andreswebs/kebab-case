@@ -4,69 +4,63 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
-// ProcessFile recursively renames files and directories using the defined format
-func ProcessFile(name string) (err error) {
+// ProcessFile
+// recursively renames files and directories using the defined format
+func ProcessFile(name string, wg *sync.WaitGroup, errCh chan<- error) {
+	var err error
 
 	fullpath, err := filepath.Abs(name)
 	if err != nil {
+		errCh <- err
 		return
 	}
 
 	newname := getNewname(fullpath)
 	err = rename(fullpath, newname)
 	if err != nil {
+		errCh <- err
 		return
 	}
 
-	dir, err := isDir(newname)
+	dirYes, err := isDir(newname)
 	if err != nil {
+		errCh <- err
 		return
 	}
 
-	if !dir {
+	if !dirYes {
 		return
 	}
 
 	filenames, dirnames, err := sift(newname)
 	if err != nil {
+		errCh <- err
 		return
 	}
 
 	// rename files
 	for _, n := range filenames {
-		newname := getNewname(n)
-		err = rename(n, newname)
-		if err != nil {
-			return
-		}
+		wg.Add(1)
+		go func(n string) {
+			defer wg.Done()
+			ProcessFile(n, wg, errCh)
+		}(n)
 	}
-
-	var newDirnames []string
 
 	// rename dirs
 	for _, d := range dirnames {
-		newdirname := getNewname(d)
-		err = rename(d, newdirname)
-		if err != nil {
-			return
-		}
-		newDirnames = append(newDirnames, newdirname)
+		wg.Add(1)
+		go func(d string) {
+			defer wg.Done()
+			ProcessFile(d, wg, errCh)
+		}(d)
 	}
-
-	for _, d := range newDirnames {
-		err = ProcessFile(d)
-		if err != nil {
-			return
-		}
-	}
-
-	return
-
 }
 
-// rename mv file to new name if new name is different from previous name
+// rename moves a file to new name if new name is different from previous name
 func rename(prevname, newname string) (err error) {
 	if newname == prevname {
 		return
@@ -75,9 +69,8 @@ func rename(prevname, newname string) (err error) {
 	return
 }
 
-// getNewname get new full file name renamed using the defined format
+// getNewname gets new full file name renamed using the defined format
 func getNewname(name string) (newname string) {
-
 	// get the dir
 	dir, filename := filepath.Split(name)
 
@@ -92,15 +85,14 @@ func getNewname(name string) (newname string) {
 	newname = filepath.Join(dir, newbasename)
 
 	return
-
 }
 
-// getBasename get file name without extension
+// getBasename gets file name without extension
 func getBasename(filename string) string {
 	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }
 
-// isDir check if a file represented by `path` is a directory
+// isDir checks if a file represented by `path` is a directory
 func isDir(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
@@ -111,7 +103,6 @@ func isDir(path string) (bool, error) {
 
 // sift inspects a directory and returns a list of filenames, a list of dirnames and an error
 func sift(dir string) (filenames, dirnames []string, err error) {
-
 	fullpath, err := filepath.Abs(dir)
 	if err != nil {
 		return
@@ -135,5 +126,4 @@ func sift(dir string) (filenames, dirnames []string, err error) {
 	}
 
 	return
-
 }

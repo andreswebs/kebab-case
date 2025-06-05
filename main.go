@@ -4,30 +4,40 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 )
 
-// run executes all tasks and returns an OS exit code and error
-func run() (code int, err error) {
-
+// run executes all tasks and returns an OS exit code
+func run() (code int) {
 	if len(os.Args) < 2 {
-		return 1, errors.New("requires an argument")
+		code = 1
+		fmt.Fprintf(os.Stderr, "%v\n", errors.New("requires an argument"))
+		return
 	}
 
-	start := os.Args[1]
+	root := os.Args[1]
 
-	err = ProcessFile(start)
-	if err != nil {
-		return 1, err
+	var wg sync.WaitGroup
+	errCh := make(chan error, 1)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ProcessFile(root, &wg, errCh)
+	}()
+	
+	wg.Wait()
+	close(errCh)
+	
+	for err := range errCh {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		code = 2
 	}
 
 	return
-
 }
 
 func main() {
-	code, err := run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-	}
+	code := run()
 	os.Exit(code)
 }

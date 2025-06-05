@@ -1,3 +1,3 @@
 module github.com/andreswebs/kebab-case
 
-go 1.24.1
+go 1.24.3
