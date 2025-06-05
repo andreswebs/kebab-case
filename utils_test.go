@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -14,9 +15,19 @@ func TestProcessFile_SingleFile(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	err = ProcessFile(filePath)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	var wg sync.WaitGroup
+	errCh := make(chan error, 10)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ProcessFile(filePath, &wg, errCh)
+	}()
+	wg.Wait()
+	close(errCh)
+	for e := range errCh {
+		if e != nil {
+			t.Fatalf("unexpected error: %v", e)
+		}
 	}
 
 	newFilePath := filepath.Join(tempDir, "test-file.txt")
@@ -37,9 +48,19 @@ func TestProcessFile_DirectoryWithFiles(t *testing.T) {
 	os.WriteFile(filePath1, []byte("content one"), 0644)
 	os.WriteFile(filePath2, []byte("content two"), 0644)
 
-	err = ProcessFile(dirPath)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	var wg sync.WaitGroup
+	errCh := make(chan error, 10)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ProcessFile(dirPath, &wg, errCh)
+	}()
+	wg.Wait()
+	close(errCh)
+	for e := range errCh {
+		if e != nil {
+			t.Fatalf("unexpected error: %v", e)
+		}
 	}
 
 	newDirPath := filepath.Join(tempDir, "test-dir")
@@ -65,9 +86,19 @@ func TestProcessFile_EmptyDir(t *testing.T) {
 		t.Fatalf("failed to create empty dir: %v", err)
 	}
 
-	err = ProcessFile(dirPath)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	var wg sync.WaitGroup
+	errCh := make(chan error, 10)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ProcessFile(dirPath, &wg, errCh)
+	}()
+	wg.Wait()
+	close(errCh)
+	for e := range errCh {
+		if e != nil {
+			t.Fatalf("unexpected error: %v", e)
+		}
 	}
 
 	newDirPath := filepath.Join(tempDir, "empty-dir")

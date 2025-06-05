@@ -1,8 +1,6 @@
 # kebab-case
 
-Quick and dirty Go script to rename files recursively to [kebab-case](https://en.wiktionary.org/wiki/kebab_case).
-
-![flow chart](docs/flow-dark.excalidraw.svg)
+Quick and dirty Go script to rename files recursively and concurrently to [kebab-case](https://en.wiktionary.org/wiki/kebab_case).
 
 ## Authors
 
